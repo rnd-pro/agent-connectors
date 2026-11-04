@@ -1,25 +1,25 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
-import { LIMITS } from '../constants.js';
 import { ensure } from '../errors.js';
-import { atomicText, inside, json, readBytes, utf8 } from '../files.js';
+import { atomicText, inside, json } from '../files.js';
 import { withLock } from '../lock.js';
-import { validateRegistry } from '../validation.js';
+import { defaultStateRoot } from '../state.js';
+import { openStorage, readStorageMarker } from './storage/connection.js';
 
-/** @param {string} root */
-export async function readRegistry(root) {
-  let text = utf8(await readBytes(join(root, 'registry.json'), LIMITS.registryBytes));
-  let document = validateRegistry(JSON.parse(text));
-  for (let script of document.scripts) {
+/**
+ * @param {string} root
+ * @param {string} [stateRoot]
+ */
+export async function readRegistry(root, stateRoot = defaultStateRoot()) {
+  root = await realpath(root);
+  let result = await (await openStorage(root, stateRoot)).read();
+  for (let script of result.document.scripts) {
     ensure(script.path.split('/').length === 2 && script.path.endsWith(`/${script.id}`),
       'INVALID_DOCUMENT', 'Script paths must be <project>/<UUID>.');
     await inside(root, script.path, true);
   }
-  return {
-    document,
-    text,
-  };
+  return result;
 }
 
 /** @param {string} root */
@@ -28,6 +28,7 @@ export async function initializeRegistry(root) {
     recursive: true,
   });
   root = await realpath(root);
+  ensure(!await readStorageMarker(root), 'ALREADY_EXISTS', 'This folder already declares a database registry.');
   /** @type {import('../../types/contracts.js').RegistryDocument} */
   let document = {
     formatVersion: 1,
@@ -48,23 +49,19 @@ export async function initializeRegistry(root) {
  * @param {string} root
  * @param {(document: import('../../types/contracts.js').RegistryDocument) => Promise<T>} change
  * @param {number} [expectedGeneration]
+ * @param {string} [stateRoot]
  */
-export async function mutateRegistry(root, change, expectedGeneration) {
-  let initial = await readRegistry(root);
+export async function mutateRegistry(root, change, expectedGeneration, stateRoot = defaultStateRoot()) {
+  root = await realpath(root);
+  let initial = await readRegistry(root, stateRoot);
   let expected = expectedGeneration ?? initial.document.generation;
   return withLock(join(root, '.registry-lock'), async () => {
-    let {
-      document,
-      text,
-    } = await readRegistry(root);
-    ensure(document.generation === expected, 'CONFLICT', 'Registry generation changed; reread before retrying.');
+    let before = await readRegistry(root, stateRoot);
+    ensure(before.document.generation === expected, 'CONFLICT', 'Registry generation changed; reread before retrying.');
+    let document = structuredClone(before.document);
     let result = await change(document);
     document.generation++;
-    validateRegistry(document);
-    let output = json(document);
-    ensure(Buffer.byteLength(output) <= LIMITS.registryBytes, 'LIMIT_EXCEEDED', 'Registry document is too large.');
-    ensure((await readRegistry(root)).text === text, 'CONFLICT', 'Registry changed outside the writer lock.');
-    await atomicText(join(root, 'registry.json'), output);
+    await (await openStorage(root, stateRoot)).compareAndSet(before, document);
     return {
       generation: document.generation,
       result,

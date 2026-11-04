@@ -12,10 +12,18 @@ export let cliPath = fileURLToPath(new URL('../../bin/agent-connectors.js', impo
 /** @param {import('node:test').TestContext} t */
 export async function fixture(t) {
   let root = await realpath(await mkdtemp(join(tmpdir(), 'agent-connectors-test-')));
-  t.after(() => rm(root, {
-    recursive: true,
-    force: true,
-  }));
+  /** @type {Array<() => unknown | Promise<unknown>>} */
+  let cleanups = [];
+  t.after(async () => {
+    try {
+      for (let cleanup of cleanups.reverse()) { await cleanup(); }
+    } finally {
+      await rm(root, {
+        recursive: true,
+        force: true,
+      });
+    }
+  });
   let collection = join(root, 'collection');
   let state = join(root, 'private');
   await initializeRegistry(collection);
@@ -27,6 +35,8 @@ export async function fixture(t) {
     state,
     registry,
     created: created.result,
+    /** @param {() => unknown | Promise<unknown>} cleanup */
+    cleanup: (cleanup) => { cleanups.push(cleanup); },
   };
 }
 

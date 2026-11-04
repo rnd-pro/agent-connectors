@@ -24,15 +24,24 @@ export class FileRegistry {
    */
   static async open(root, stateRoot) {
     let registry = new FileRegistry(await realpath(root), stateRoot);
-    await readRegistry(registry.root);
+    await registry.read();
     return registry;
   }
+
+  read() { return readRegistry(this.root, this.stateRoot); }
+
+  /**
+   * @template T
+   * @param {(document: import('../../types/contracts.js').RegistryDocument) => Promise<T>} change
+   * @param {number} [expectedGeneration]
+   */
+  mutate(change, expectedGeneration) { return mutateRegistry(this.root, change, expectedGeneration, this.stateRoot); }
 
   /** @param {string} address */
   async resolve(address) {
     let {
       document,
-    } = await readRegistry(this.root);
+    } = await this.read();
     let binding = document.bindings.find((item) => item.address === address);
     ensure(binding, 'NOT_FOUND', `Unknown semantic address: ${address}`);
     let script = document.scripts.find((item) => item.id === binding.scriptId);
@@ -141,7 +150,7 @@ export class FileRegistry {
    * @param {number} [expectedGeneration]
    */
   async prepare(address, expectedGeneration) {
-    return mutateRegistry(this.root, async (document) => {
+    return this.mutate(async (document) => {
       let binding = document.bindings.find((item) => item.address === address);
       ensure(binding, 'NOT_FOUND', 'Unknown semantic address.');
       let script = document.scripts.find((item) => item.id === binding.scriptId);
@@ -167,7 +176,7 @@ export class FileRegistry {
    */
   async bind(address, scriptId, revision, expectedGeneration) {
     ensure(new RegExp(ADDRESS_PATTERN).test(address) && address.length <= 256, 'INVALID_INPUT', 'Invalid semantic address.');
-    return mutateRegistry(this.root, async (document) => {
+    return this.mutate(async (document) => {
       let script = document.scripts.find((item) => item.id === scriptId);
       ensure(script, 'NOT_FOUND', 'Unknown script UUID.');
       await this.revision(script, revision);
@@ -188,7 +197,7 @@ export class FileRegistry {
    * @param {number} [expectedGeneration]
    */
   async unbind(address, expectedGeneration) {
-    return mutateRegistry(this.root, async (document) => {
+    return this.mutate(async (document) => {
       let index = document.bindings.findIndex((binding) => binding.address === address);
       ensure(index !== -1, 'NOT_FOUND', 'Unknown semantic address.');
       return document.bindings.splice(index, 1)[0];
@@ -249,7 +258,7 @@ export class FileRegistry {
     ensure(!namespace || new RegExp(ADDRESS_PATTERN).test(namespace), 'INVALID_INPUT', 'Invalid namespace.');
     let {
       document,
-    } = await readRegistry(this.root);
+    } = await this.read();
     let prefix = namespace ? `${namespace}.` : '';
     /** @type {Map<string, Awaited<ReturnType<FileRegistry['revision']>>>} */
     let revisions = new Map();

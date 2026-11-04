@@ -9,3 +9,5 @@ export { CONTRACT_VERSION, SCHEMA_DIALECT, LIMITS } from './constants.js';
 export { runCapability } from './execution/runner.js';
 export { grantCapability, revokeGrant, readAuthority, setCredentialProfile, credentialProfiles, removeCredentialProfile } from './execution/authority.js';
 export { getReceipt, listReceipts, forgetReceipt } from './execution/receipts.js';
+export { configureStorage, reconnectStorage, storageStatus, importRegistry } from './registry/storage/manage.js';
+export { provisionPostgres } from './registry/storage/provision.js';

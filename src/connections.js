@@ -1,16 +1,15 @@
-import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { defaultStateRoot } from './state.js';
+
+export { defaultStateRoot };
 import { mkdir, realpath } from 'node:fs/promises';
 import { ensure, hasCode } from './errors.js';
 import { atomicText, json, readBytes, utf8 } from './files.js';
 import { LIMITS } from './constants.js';
 import { validateConnections } from './validation.js';
 import { readRegistry } from './registry/store.js';
+import { readStorageMarker } from './registry/storage/connection.js';
 import { withLock } from './lock.js';
-
-export function defaultStateRoot() {
-  return resolve(process.env.AGENT_CONNECTORS_HOME || join(homedir(), '.agent-connectors'));
-}
 
 /** @param {string} stateRoot */
 export async function readConnections(stateRoot) {
@@ -42,7 +41,7 @@ export async function changeConnection(stateRoot, name, folder) {
       let root = await realpath(folder);
       let {
         document: registry,
-      } = await readRegistry(root);
+      } = await readRegistry(root, stateRoot);
       let previous = Object.hasOwn(document.sources, name) ? document.sources[name] : undefined;
       ensure(!previous || (previous.root === root && previous.registryId === registry.id),
         'ALREADY_EXISTS', 'Connection name already identifies another registry. Disconnect it explicitly first.');
@@ -73,19 +72,21 @@ export async function findRegistry(selected, stateRoot, cwd = process.cwd()) {
       let source = connections.sources[selected];
       let {
         document,
-      } = await readRegistry(source.root);
+      } = await readRegistry(source.root, stateRoot);
       ensure(source.registryId === document.id, 'INTEGRITY_ERROR', 'Connected directory now contains a different registry. Reconnect explicitly.');
       return source.root;
     }
     ensure(selected.includes('/') || selected.includes('\\') || selected === '.', 'NOT_FOUND', 'Unknown registry connection. Use ./folder for a relative directory.');
     let root = await realpath(resolve(cwd, selected));
-    await readRegistry(root);
+    await readRegistry(root, stateRoot);
     return root;
   }
   let current = await realpath(cwd);
   while (true) {
-    try { await readRegistry(current); return current; }
-    catch (error) { if (!hasCode(error, 'ENOENT')) { throw error; } }
+    try { await readRegistry(current, stateRoot); return current; }
+    catch (error) {
+      if (!hasCode(error, 'ENOENT') || await readStorageMarker(current)) { throw error; }
+    }
     let parent = dirname(current);
     if (parent === current) { break; }
     current = parent;

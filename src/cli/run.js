@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { COMMANDS, HELP } from './commands.js';
 import { defaultStateRoot, findRegistry, changeConnection, readConnections } from '../connections.js';
@@ -7,6 +8,7 @@ import { ConnectorError, ensure } from '../errors.js';
 import { json, readBytes, utf8 } from '../files.js';
 import { LIMITS } from '../constants.js';
 import { grantCommand, privateCommand, runCommand } from './execution.js';
+import { STORAGE_COMMANDS, storageTarget, storageCommand, registrySchema, reconnectStorage } from './storage.js';
 
 /**
  * @param {string[]} args
@@ -23,6 +25,9 @@ export async function run(args) {
           short: 'h',
         },
         version: {
+          type: 'boolean',
+        },
+        write: {
           type: 'boolean',
         },
         acknowledge: {
@@ -47,6 +52,9 @@ export async function run(args) {
           'timeout',
           'result-bytes',
           'request',
+          'type',
+          'database',
+          'role',
         ].map((name) => [
           name,
           {
@@ -121,9 +129,12 @@ export async function run(args) {
   if (Object.hasOwn(registryHandlers, command)) {
     return registryHandlers[/** @type {keyof typeof registryHandlers} */ (command)]();
   }
+  if (command === 'registry schema') { return registrySchema(); }
+  if (command === 'registry reconnect') { return reconnectStorage(resolve(target), storageTarget(values), stateRoot); }
   let root = await findRegistry(optional('registry'), stateRoot);
   let registry = await FileRegistry.open(root, stateRoot);
   let generation = integer('expected-generation');
+  if (Object.hasOwn(STORAGE_COMMANDS, command)) { return storageCommand(command, registry, values, generation); }
   let page = {
     offset: integer('offset'),
     limit: integer('limit'),

@@ -6,7 +6,6 @@ import { ensure } from '../errors.js';
 import { atomicText, inside, json } from '../files.js';
 import { readBundle } from '../bundle/read.js';
 import { saveSnapshot } from '../bundle/snapshots.js';
-import { mutateRegistry, readRegistry } from './store.js';
 
 /**
  * @param {import('./registry.js').FileRegistry} registry
@@ -22,7 +21,7 @@ export async function scaffold(registry, address, project, effect, expectedGener
   let created = '';
   let published = false;
   try {
-    let result = await mutateRegistry(registry.root, async (document) => {
+    let result = await registry.mutate(async (document) => {
       ensure(!document.bindings.some((binding) => binding.address === address), 'ALREADY_EXISTS', 'Semantic address already exists.');
       let id = randomUUID();
       let path = `${project}/${id}`;
@@ -97,7 +96,7 @@ export async function scaffold(registry, address, project, effect, expectedGener
     return result;
   } finally {
     // A lock-release failure must not delete already published source.
-    let referenced = created && !published && (await readRegistry(registry.root)).document.scripts
+    let referenced = created && !published && (await registry.read()).document.scripts
       .some((script) => script.path === relative(registry.root, created).split('\\').join('/'));
     if (created && !published && !referenced) {
       await rm(created, {
@@ -117,7 +116,7 @@ export async function scaffold(registry, address, project, effect, expectedGener
 export async function writeDescription(registry, address, replacement, expectedGeneration) {
   ensure(replacement.trim() && Buffer.byteLength(replacement) <= LIMITS.descriptionBytes,
     'INVALID_INPUT', 'Description must be nonempty and at most 64 KiB.');
-  return mutateRegistry(registry.root, async (document) => {
+  return registry.mutate(async (document) => {
     let binding = document.bindings.find((item) => item.address === address);
     let script = document.scripts.find((item) => item.id === binding?.scriptId);
     ensure(script, 'NOT_FOUND', 'Unknown semantic address.');

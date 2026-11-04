@@ -6,7 +6,7 @@ Give a script a semantic address such as `crm.users.add`, describe its input and
 
 The registry prepares exact, content-addressed revisions for review. Changes to code, helper files, contracts, or documentation produce a different revision; preparing a change does not silently move existing bindings.
 
-Agent Connectors requires Node.js 24 or newer. Discover, scaffold, inspect, prepare, and explicitly run trusted local connectors through the CLI or library. Private grants control which exact revisions may run, in which scope, and with which credential profile. Preparation is separate from execution approval. AGUI integration is not yet included.
+Agent Connectors requires Node.js 24 or newer. Discover, scaffold, inspect, prepare, and explicitly run trusted local connectors through the CLI or library. Private grants control which exact revisions may run, in which scope, and with which credential profile. Preparation is separate from execution approval. Interfaces such as Symbiote AGUI can consume the same local API without running a separate backend service.
 
 ## Basic workflow
 
@@ -30,7 +30,7 @@ Run `agent-connectors --help` for the command list. See the [CLI reference](./do
 
 ## Share through Git
 
-Keep `registry.json`, connector files, and descriptions in your team's repository. Registry IDs and script UUIDs preserve identity, while explicit revision bindings preserve the reviewed bytes. Concurrent registry edits fail clearly rather than overwrite another writer.
+Keep connector files, descriptions, and the portable registry definition in your team's repository. Registry IDs and script UUIDs preserve identity, while explicit revision bindings preserve the reviewed bytes. Concurrent registry edits fail clearly rather than overwrite another writer.
 
 Connected folder paths and prepared snapshots stay in private local storage. Another machine can inspect a revision if its checkout matches the pinned bytes; otherwise it reports the missing revision instead of substituting current code. Sharing a collection never transfers permission to execute it.
 
@@ -38,7 +38,7 @@ Connected folder paths and prepared snapshots stay in private local storage. Ano
 
 Agent Connectors is independent of AGUI, MCP, and a permanent server. It follows the [NoES Script Registry](https://rnd-pro.com/noes/#the-script-registry): semantic discovery, portable JavaScript modules, documented contracts, and explicit execution boundaries.
 
-The local runner uses exact grants, a minimal child environment, schema validation, bounded processes, and durable request receipts. It executes trusted reviewed code with the host user's privileges; it is not a sandbox for malicious scripts. Database-backed registries and AGUI integration remain separate capabilities.
+The local runner uses exact grants, a minimal child environment, schema validation, bounded processes, and durable request receipts. It executes trusted reviewed code with the host user's privileges; it is not a sandbox for malicious scripts. Choose ordinary JSON, local SQLite, or a shared PostgreSQL binding catalog through the same API. See [registry storage](./docs/storage.md) for explicit backend setup and metadata transfer. These choices do not change script handlers or transfer execution authority.
 
 ## License
 
