@@ -92,7 +92,7 @@ test('tampered prepared revisions and duplicate addresses are never trusted', as
   });
 });
 
-test('CLI errors are structured and unsupported execution is unavailable', async (t) => {
+test('CLI errors are structured and missing execution arguments are rejected', async (t) => {
   let {
     collection,
     state,

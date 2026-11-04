@@ -1,6 +1,6 @@
 # CLI reference
 
-All commands below belong to `agent-connectors`. Normal results use `{ "ok": true, "result": ... }` with two-space JSON indentation. Errors are formatted JSON on stderr with `ok: false` and `error.code`/`error.message`. Exit codes are 0 for success, 2 for invalid arguments, and 1 for document, integrity, conflict, or I/O failures. Help is plain text; `--version` is JSON.
+All commands below belong to `agent-connectors`. Normal results use `{ "ok": true, "result": ... }` with two-space JSON indentation. Errors are formatted JSON on stderr with `ok: false` and `error.code`/`error.message`. Exit codes are 0 for success, 2 for invalid arguments, and 1 for document, integrity, conflict, or I/O failures. `run` also exits 1 with `ok: false` and its receipt on stdout for rejected/unknown outcomes. Reading that same receipt remains a successful read. Help is plain text; `--version` is JSON.
 
 ## Scope and connections
 
@@ -36,4 +36,6 @@ Snapshots are deduplicated by digest and never edited by the tool. Preparing the
 
 ## Boundaries
 
-There is no `run`, grant, public endpoint, remote database registry, or AGUI command in this release. A valid contract/hash is not execution authorization. File locks serialize participating local writers; they do not replace Git merge review or protect against a malicious user who controls the filesystem. A stale lock belonging to a dead local process can be recovered automatically; unknown or live locks return a bounded `BUSY` failure.
+See [local execution](./execution.md) for `grant`, `grants`, `revoke`, `run`, `credential`, and `receipts` commands. Those controls use private local state and do not require a registry connection unless resolving a capability.
+
+There is no public execution endpoint, remote database registry, or AGUI command in this release. A valid contract/hash is not execution authorization. File locks serialize participating local writers; they do not replace Git merge review or protect against a malicious user who controls the filesystem. A stale lock belonging to a dead local process can be recovered automatically; unknown or live locks return a bounded `BUSY` failure.

@@ -13,6 +13,17 @@ function validator() {
   });
 }
 
+/**
+ * @param {boolean | Record<string, unknown>} schema
+ * @param {unknown} value
+ * @param {string} code
+ */
+export function validateData(schema, value, code) {
+  let validate = validator().compile(schema);
+  ensure(!('$async' in validate) || !validate.$async, 'INVALID_SCHEMA', 'Async schemas are unsupported.');
+  ensure(validate(value), code, 'Data does not match its JSON Schema.');
+}
+
 let ajv = validator();
 let manifest = ajv.compile(manifestSchema);
 let registry = ajv.compile(registrySchema);
@@ -32,7 +43,10 @@ function assertSchema(validate, value) {
 function checkContract(schema) {
   ensure(typeof schema === 'boolean' || !('$schema' in schema) || schema.$schema === SCHEMA_DIALECT,
     'INVALID_SCHEMA', 'Only JSON Schema 2020-12 is supported.');
-  try { validator().compile(schema); }
+  try {
+    let validate = validator().compile(schema);
+    ensure(!('$async' in validate) || !validate.$async, 'INVALID_SCHEMA', 'Async schemas are unsupported.');
+  }
   catch (error) { ensure(false, 'INVALID_SCHEMA', error instanceof Error ? error.message : 'Invalid JSON Schema.'); }
 }
 

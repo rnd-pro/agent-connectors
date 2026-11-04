@@ -6,6 +6,7 @@ import { initializeRegistry } from '../registry/store.js';
 import { ConnectorError, ensure } from '../errors.js';
 import { json, readBytes, utf8 } from '../files.js';
 import { LIMITS } from '../constants.js';
+import { grantCommand, privateCommand, runCommand } from './execution.js';
 
 /**
  * @param {string[]} args
@@ -24,6 +25,9 @@ export async function run(args) {
         version: {
           type: 'boolean',
         },
+        acknowledge: {
+          type: 'boolean',
+        },
         ...Object.fromEntries([
           'registry',
           'name',
@@ -37,6 +41,12 @@ export async function run(args) {
           'expected-generation',
           'offset',
           'limit',
+          'scope',
+          'source',
+          'profile',
+          'timeout',
+          'result-bytes',
+          'request',
         ].map((name) => [
           name,
           {
@@ -62,7 +72,11 @@ export async function run(args) {
   }
   let positionals = parsed.positionals;
   let command = positionals.shift() || '';
-  if (command === 'registry') { command += ` ${positionals.shift() || ''}`; }
+  if (new Set([
+    'registry',
+    'credential',
+    'receipts',
+  ]).has(command)) { command += ` ${positionals.shift() || ''}`; }
   ensure(Object.hasOwn(COMMANDS, command), 'INVALID_INPUT', `Unknown command: ${command}. Use --help.`);
   let definition = COMMANDS[/** @type {keyof typeof COMMANDS} */ (command)];
   ensure(definition.args === -1 ? positionals.length <= 1 : positionals.length === definition.args,
@@ -93,6 +107,11 @@ export async function run(args) {
   }
   let stateRoot = defaultStateRoot();
   let target = positionals[0] || '';
+  let privateResult = privateCommand(command, target, stateRoot, {
+    optional,
+    acknowledged: values.acknowledge === true,
+  });
+  if (privateResult) { return privateResult; }
   let registryHandlers = {
     'registry init': () => initializeRegistry(target),
     'registry list': () => readConnections(stateRoot),
@@ -110,6 +129,15 @@ export async function run(args) {
     limit: integer('limit'),
   };
   let handlers = {
+    grant: () => grantCommand(registry, target, {
+      required,
+      optional,
+      integer,
+    }),
+    run: () => runCommand(registry, target, {
+      required,
+      optional,
+    }),
     list: () => registry.list(target, page),
     search: () => registry.search(target, page),
     show: () => registry.show(target),
@@ -131,7 +159,7 @@ export async function main(args) {
   try {
     let result = await run(args);
     process.stdout.write(typeof result === 'string' ? `${result}\n` : json({
-      ok: true,
+      ok: process.exitCode !== 1,
       result,
     }));
   } catch (error) {

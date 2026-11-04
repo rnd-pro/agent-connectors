@@ -6,3 +6,6 @@ export { diffBundles } from './bundle/diff.js';
 export { defaultStateRoot, findRegistry, readConnections, changeConnection } from './connections.js';
 export { ConnectorError } from './errors.js';
 export { CONTRACT_VERSION, SCHEMA_DIALECT, LIMITS } from './constants.js';
+export { runCapability } from './execution/runner.js';
+export { grantCapability, revokeGrant, readAuthority, setCredentialProfile, credentialProfiles, removeCredentialProfile } from './execution/authority.js';
+export { getReceipt, listReceipts, forgetReceipt } from './execution/receipts.js';

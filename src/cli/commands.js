@@ -1,4 +1,7 @@
+import { EXECUTION_COMMANDS } from './execution.js';
+
 export const COMMANDS = Object.freeze({
+  ...EXECUTION_COMMANDS,
   'registry init': {
     args: 1,
     options: [],
@@ -111,8 +114,10 @@ export const HELP = [
   'Mutation commands accept --expected-generation N for optimistic concurrency.',
   'Default scope is the nearest ancestor registry.json. Explicit selection never falls back.',
   'AGENT_CONNECTORS_HOME sets private connections and prepared snapshot storage.',
-  'create prepares and binds a non-executable scaffold; prepare never moves existing aliases.',
+  'create prepares and binds an unimplemented scaffold; prepare never moves existing aliases.',
   'describe --file edits working documentation; prepare and bind publish a new revision explicitly.',
-  'All output is formatted JSON. No command imports or executes connector source.',
-  'Script execution, grants, remote registries, and AGUI integration are not available in this release.',
+  'All output is formatted JSON. Only run executes connector source, after an exact private grant.',
+  'Writes must return context.verified(value) after verifying the domain result, or context.unknown().',
+  'Request IDs retain results or unknown outcomes; retries never automatically rerun retained requests.',
+  'Remote registries and AGUI integration are not available in this release.',
 ].join('\n');
