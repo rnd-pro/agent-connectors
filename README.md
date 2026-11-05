@@ -1,45 +1,94 @@
 # Agent Connectors
 
-A discoverable, Git-friendly registry and local runner for reusable Node.js capabilities.
+[![npm version](https://img.shields.io/npm/v/agent-connectors)](https://www.npmjs.com/package/agent-connectors)
+[![npm downloads](https://img.shields.io/npm/dm/agent-connectors)](https://www.npmjs.com/package/agent-connectors)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![Node.js 24 or newer](https://img.shields.io/badge/Node.js-%3E%3D24-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/en/download)
 
-Give a script a semantic address such as `crm.users.add`, describe its input and output, and let agents discover the capability without loading an entire codebase. Several addresses can refer to the same implementation. Names can evolve without copying scripts or tying their identity to a directory name.
+> Reusable capabilities for agents and interactive tools.
 
-The registry prepares exact, content-addressed revisions for review. Changes to code, helper files, contracts, or documentation produce a different revision; preparing a change does not silently move existing bindings.
+Agent Connectors gives your team's Node.js scripts discoverable names, documented inputs and outputs, and explicit permission to run. Agents can find and inspect a capability without loading an entire codebase, while your team keeps its implementation and description in Git.
 
-Agent Connectors requires Node.js 24 or newer. Discover, scaffold, inspect, prepare, and explicitly run trusted local connectors through the CLI or library. Private grants control which exact revisions may run, in which scope, and with which credential profile. Preparation is separate from execution approval. Interfaces such as Symbiote AGUI can consume the same local API without running a separate backend service.
+Use it through the CLI or connect it to interfaces such as [Symbiote AGUI](https://github.com/rnd-pro/symbiote-agui). It runs locally without a permanent backend service.
 
-## Basic workflow
+## Why use Agent Connectors?
 
-With the `agent-connectors` executable on your PATH:
+- Turn recurring operations into reusable, documented capabilities.
+- Find scripts by semantic addresses such as `crm.users.add`.
+- Review and approve exact revisions before running them.
+- Reuse one implementation under several addresses without copying source.
+- Share capabilities through Git while keeping credentials and execution permissions private.
+- Inspect retained outcomes when a request's result is uncertain.
+
+## Get started
+
+You need Node.js 24 or newer. Run the CLI through `npx`, without a global installation:
 
 ```sh
-agent-connectors registry init ./connectors
-agent-connectors registry connect ./connectors --name team
-agent-connectors create crm.users.add --project crm --effect write --registry team
-agent-connectors list --registry team
-agent-connectors list crm.users --registry team
-agent-connectors describe crm.users.add --registry team
-agent-connectors show crm.users.add --registry team
+npx agent-connectors --help
 ```
 
-`create` writes an ESM scaffold, contract, and Markdown description under `<project>/<UUID>/`. Implement the script by editing those ordinary files. Discovery and preparation inspect source as data; only explicit execution imports it.
+Create a registry, connect it under a local name, and scaffold a capability:
 
-After editing, use `check` to inspect the candidate, `diff --from <previous-revision>` to review its file changes, and `prepare` to store the revision. Explicitly `bind` the address to the returned script UUID and revision when ready. Another address can bind to that same pair without copying source.
+```sh
+npx agent-connectors registry init ./connectors
+npx agent-connectors registry connect ./connectors --name team
+npx agent-connectors create crm.users.add --project crm --effect write --registry team
+```
 
-Run `agent-connectors --help` for the command list. See the [CLI reference](./docs/cli.md) for exact options, [contract](./docs/contract.md) for registry/bundle behavior, and [local execution](./docs/execution.md) for grants, credential profiles, and retained request outcomes. To run directly from a source checkout, see [Contributing](./CONTRIBUTING.md).
+The scaffold contains an ESM script, an input/output contract, and a Markdown description under `<project>/<UUID>/`. Implement the operation by editing those files; the generated stub does not perform business operations.
+
+Discover and inspect capabilities:
+
+```sh
+npx agent-connectors list --registry team
+npx agent-connectors list crm.users --registry team
+npx agent-connectors describe crm.users.add --registry team
+npx agent-connectors show crm.users.add --registry team
+```
+
+See the [CLI reference](./docs/cli.md) for authoring, review, and binding commands, and [local execution](./docs/execution.md) for granting access and running a capability.
+
+## How it works
+
+A semantic address points to a script UUID and an exact, content-addressed revision. Names can evolve, and several addresses can refer to the same implementation without tying its identity to a directory name.
+
+After editing a script, use `npx agent-connectors check` to inspect the candidate, `diff --from <previous-revision>` to review changes, and `prepare` to store its revision. Explicitly `bind` the address to the returned script UUID and revision when ready. Changes to code, helper files, contracts, or documentation produce a different revision; preparation never silently moves existing bindings.
+
+Discovery and preparation inspect source as data. Only explicit execution imports connector code, and it requires a matching private grant for the exact revision, scope, and credential profile. Sharing or preparing a capability does not authorize it to run.
+
+The local runner validates inputs and outputs, limits process lifetime and result size, and retains request outcomes. It runs trusted, reviewed code with your host account's privileges; it is not a sandbox for malicious scripts. See the [execution guide](./docs/execution.md) for these boundaries and how to handle uncertain results.
 
 ## Share through Git
 
 Keep connector files, descriptions, and the portable registry definition in your team's repository. Registry IDs and script UUIDs preserve identity, while explicit revision bindings preserve the reviewed bytes. Concurrent registry edits fail clearly rather than overwrite another writer.
 
-Connected folder paths and prepared snapshots stay in private local storage. Another machine can inspect a revision if its checkout matches the pinned bytes; otherwise it reports the missing revision instead of substituting current code. Sharing a collection never transfers permission to execute it.
+Connected folder paths, prepared snapshots, credentials, and execution grants stay in private local storage. Another machine can inspect a revision when its checkout matches the pinned bytes. If neither matching source nor a verified snapshot is available, it reports the missing revision instead of substituting current code.
 
-## Architecture
+## Choose registry storage
 
-Agent Connectors is independent of AGUI, MCP, and a permanent server. It follows the [NoES Script Registry](https://rnd-pro.com/noes/#the-script-registry): semantic discovery, portable JavaScript modules, documented contracts, and explicit execution boundaries.
+Start with ordinary JSON files, use local SQLite, or connect a shared PostgreSQL binding catalog through the same API. Storage choices do not change script handlers or transfer execution authority.
 
-The local runner uses exact grants, a minimal child environment, schema validation, bounded processes, and durable request receipts. It executes trusted reviewed code with the host user's privileges; it is not a sandbox for malicious scripts. Choose ordinary JSON, local SQLite, or a shared PostgreSQL binding catalog through the same API. See [registry storage](./docs/storage.md) for explicit backend setup and metadata transfer. These choices do not change script handlers or transfer execution authority.
+See the [storage guide](./docs/storage.md) for setup, access controls, and metadata transfer.
+
+## Integrate with your tools
+
+Agent Connectors is independent of AGUI and MCP. Applications can use its local library API to discover capabilities and run approved revisions without a separate backend service. Symbiote AGUI uses this API for direct connector actions from interfaces.
+
+The project follows the [NoES Script Registry](https://rnd-pro.com/noes/#the-script-registry): semantic discovery, portable JavaScript modules, documented contracts, and explicit execution boundaries.
+
+## Learn more
+
+- [CLI commands and options](./docs/cli.md)
+- [Registry and bundle contract](./docs/contract.md)
+- [Local execution, credentials, and library integration](./docs/execution.md)
+- [Registry storage and transfer](./docs/storage.md)
+- [Package on npm](https://www.npmjs.com/package/agent-connectors)
+
+## Contributing
+
+Read the [contributing guide](./CONTRIBUTING.md) for checkout setup, validation, and local CLI usage.
 
 ## License
 
-MIT. See [LICENSE](./LICENSE).
+**MIT** &copy; [RND-PRO.com](https://rnd-pro.com/)
