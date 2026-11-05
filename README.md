@@ -49,6 +49,22 @@ npx agent-connectors show crm.users.add --registry team
 
 See the [CLI reference](./docs/cli.md) for authoring, review, and binding commands, and [local execution](./docs/execution.md) for granting access and running a capability.
 
+## Use with your AI agent
+
+Install the [Agent Connectors skill](./skills/agent-connectors/SKILL.md) globally for your agent with the [skills CLI](https://skills.sh/):
+
+```sh
+npx skills add rnd-pro/agent-connectors --skill agent-connectors --global
+```
+
+Omit `--global` to install only in the current project. Keep the same scope when reinstalling or updating an existing skill. Restart your agent session after installation, then ask it to discover an existing capability or create one for your task.
+
+For example:
+
+> Use Agent Connectors to find and inspect the capabilities in our team registry before implementing a new one.
+
+The skill guides discovery, implementation, review, and approved execution through `npx agent-connectors`. Installing it does not grant permission to run connector scripts.
+
 ## How it works
 
 A semantic address points to a script UUID and an exact, content-addressed revision. Names can evolve, and several addresses can refer to the same implementation without tying its identity to a directory name.
