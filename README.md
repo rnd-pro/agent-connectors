@@ -91,7 +91,7 @@ See the [storage guide](./docs/storage.md) for setup, access controls, and metad
 
 Agent Connectors is independent of AGUI and MCP. Applications can use its local library API to discover capabilities and run approved revisions without a separate backend service. Symbiote AGUI uses this API for direct connector actions from interfaces.
 
-The project follows the [NoES Script Registry](https://rnd-pro.com/noes/#the-script-registry): semantic discovery, portable JavaScript modules, documented contracts, and explicit execution boundaries.
+Agent Connectors implements the script-registry part of the [NoES (No Enterprise Software) manifesto](https://rnd-pro.com/noes/), which organizes business systems around data, scripts, and agents. Its [Script Registry](https://rnd-pro.com/noes/#the-script-registry) makes operations discoverable and reusable across agents and interfaces. Versioned scripts, documented contracts, and explicit execution permissions let useful solutions become shared capabilities that evolve with the team.
 
 ## Learn more
 
