@@ -1,8 +1,9 @@
 {
   "name": "agent-connectors",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Discover and prepare reusable Node.js connector capabilities.",
   "type": "module",
+  "types": "./types/index.d.ts",
   "license": "MIT",
   "engines": {
     "node": ">=24"
@@ -11,20 +12,26 @@
     "agent-connectors": "./bin/agent-connectors.js"
   },
   "exports": {
-    ".": "./src/index.js",
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
     "./schemas/*": "./schemas/*"
   },
   "files": [
     "bin/",
     "src/",
+    "declarations/",
     "types/",
     "schemas/",
     "docs/",
     "CONTRIBUTING.md"
   ],
   "scripts": {
-    "types": "tsc --project tsconfig.json",
+    "types:build": "tsc --project tsconfig.declarations.json",
+    "types": "npm run types:build && tsc --project tsconfig.json",
     "test": "node --test tests/node/*.test.js",
+    "prepack": "npm run types:build",
     "prepublishOnly": "npm run types && npm test",
     "test:postgres": "node --test tests/node/postgres.integration.js"
   },

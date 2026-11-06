@@ -74,6 +74,13 @@ Revocation is checked before importing source and periodically during execution.
 
 ## Library integration
 
-Use `runCapability(registry, address, input, { scope, requestId, source?, signal? })`. It returns a typed `ReceiptView`; caller cancellation does not imply domain rollback. The library also exports grant/revocation, credential-profile, and receipt functions. Shared types live in `types/contracts.d.ts`; private storage contracts use the authority, receipt-index, and execution-result JSON Schemas.
+Use `runCapability(registry, address, input, { scope, requestId, source?, signal? })`. It returns a typed `ReceiptView`; caller cancellation does not imply domain rollback. The library also exports grant/revocation, credential-profile, and receipt functions. API declarations and shared contract/storage types are available from the `agent-connectors` entry point in TypeScript and JSDoc:
+
+```ts
+import { FileRegistry, runCapability } from 'agent-connectors';
+import type { ExecutionRequest, GrantOptions, ReceiptView, StorageTarget } from 'agent-connectors';
+```
+
+JavaScript callers can use `import('agent-connectors').ExecutionRequest` in JSDoc. Node.js typings are needed for Node APIs; PostgreSQL typings belong to this package's development tooling and are unnecessary for consumers. Private storage contracts use the authority, receipt-index, and execution-result JSON Schemas.
 
 Private authority and receipts remain outside connector collections and snapshots. Git sharing, source aliases, and preparation cannot grant execution. AGUI's session/transport adapter and public execution policies are separate integration stages.

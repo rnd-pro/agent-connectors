@@ -11,6 +11,8 @@ node ./bin/agent-connectors.js --help
 
 The package uses native ESM and JSDoc-checked JavaScript, with no runtime build phase. Keep changes focused, reuse existing helpers, and preserve the boundary that registry operations never import connector code. Add behavioral coverage for integrity, path handling, concurrency, or a concrete bug rather than tests that mirror source formatting.
 
+`npm run types` generates API declarations from the public JavaScript entry point before checking the project. Keep shared models in `types/`; `types/index.d.ts` re-exports them with the generated API. Generated `declarations/` files are ignored by Git and included automatically by `npm pack` and publication.
+
 Tests use isolated temporary registries and private state directories. Execution tests run controlled local connector fixtures and exercise owned-process cleanup. They do not modify your normal connection list, use real external credentials, or require a server for the default file/SQLite suite. `npm pack --dry-run` reviews package contents without publication.
 
 For a local CLI installation, use `npm install --global <checkout-path>` or invoke `node <checkout-path>/bin/agent-connectors.js` directly. The package does not create Git repositories or commit changes.
